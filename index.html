@@ -3,6 +3,14 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b1020" />
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <title>Shopping List · Supabase + GitHub Pages</title>
     <style>
       :root { --gap: 12px; --radius: 14px; }
@@ -117,12 +125,18 @@
     </div>
 
     <script type="module">
-      // 🔧 Sæt dine Supabase værdier
-         const SUPABASE_URL = "https://opbvsqapbuutaddzftth.supabase.co"; // fx https://abcdxyz.supabase.co
+      const SUPABASE_URL = "https://opbvsqapbuutaddzftth.supabase.co"; // fx https://abcdxyz.supabase.co
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wYnZzcWFwYnV1dGFkZHpmdHRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MDc5NzQsImV4cCI6MjA2OTI4Mzk3NH0.Zetp6la4KWgd_wfG8vGx8kM5-D7KdqysPrWcEcWwVoI"; // Anon public key (må ligge i frontend)
 
       import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: window.localStorage
+        }
+      });
 
       // UI refs
       const userBadge = document.getElementById('userBadge');
@@ -303,12 +317,24 @@
 
       // Håndtér deep-link fra Magic Link / OAuth
       window.addEventListener('hashchange', refreshUser);
+
+      // Lyt efter session-ændringer (persist + auto-refresh)
+      supabase.auth.onAuthStateChange((_event, _session) => {
+        refreshUser();
+      });
       window.addEventListener('load', refreshUser);
 
       // Realtime: lyt på ændringer i ListItem (alle brugere)
       supabase.channel('realtime:ListItem')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'ListItem' }, () => loadItems())
         .subscribe();
+
+      // PWA: registrér service worker (GitHub Pages subpath-safe)
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+      }
     </script>
   </body>
 </html>
