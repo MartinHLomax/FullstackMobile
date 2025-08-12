@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shopping List · Supabase + GitHub Pages</title>
+    <style>
+      :root { --gap: 12px; --radius: 14px; }
+      html, body { margin:0; padding:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial; background:#0b1020; color:#f2f4f8; }
+      a { color: inherit; }
+      .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+      header { display:flex; align-items:center; justify-content:space-between; gap:var(--gap); margin-bottom: 16px; }
+      .card { background: #121935; border: 1px solid #273057; border-radius: var(--radius); padding: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+      .row { display:flex; gap: var(--gap); align-items:center; }
+      .muted { color:#a6b0d6; font-size: 14px; }
+      button, input { font: inherit; }
+      button { padding: 10px 14px; border-radius: 12px; border:1px solid #3d4b86; background:#1a244d; color:#fff; cursor:pointer; }
+      button:hover { filter: brightness(1.1); }
+      input[type="text"], input[type="email"] { padding: 10px 12px; border-radius: 12px; border:1px solid #3d4b86; background:#0f1633; color:#fff; width:100%; }
+      .pill { padding: 4px 8px; border:1px solid #3d4b86; background:#0f1633; border-radius: 999px; font-size:12px; }
+      ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
+      li.item { display:flex; align-items:center; justify-content:space-between; gap:var(--gap); background:#0f1633; border:1px solid #273057; border-radius: 12px; padding: 10px; }
+      .item-name { font-weight:600; }
+      .qty-controls { display:flex; align-items:center; gap:8px; }
+      .qty-btn { width:36px; height:36px; border-radius:12px; }
+      .remove-btn { background:#5c1a2a; border-color:#a43d5b; }
+      .stats { display:flex; gap:10px; align-items:center; }
+      .grid { display:grid; grid-template-columns: 1fr; gap: var(--gap); }
+      @media (min-width: 760px) { .grid { grid-template-columns: 1.2fr 1fr; } }
+      footer { margin-top: 36px; text-align:center; color:#8ea0d0; font-size:13px; }
+      /* Compact add-item card */
+      .add-card h2 { margin: 4px 0 8px !important; }
+      .add-card .row { gap: 8px; }
+      .add-card input[type="text"] { padding: 6px 10px; height: 36px; }
+      .add-card button { height: 36px; padding: 0 12px; }
+  /* Compact add-item card */
+      .add-card h2 { margin: 4px 0 8px !important; }
+      .add-card .row { gap: 8px; }
+      .add-card input[type="text"] { padding: 6px 10px; height: 36px; }
+      .add-card button { height: 36px; padding: 0 12px; }
+
+      /* Mobile responsiveness */
+      @media (max-width: 520px) {
+        .wrap { padding: 16px 12px 64px; }
+        header { flex-direction: column; align-items: flex-start; gap: 8px; }
+        h1 { font-size: 20px !important; }
+        .stats { gap: 6px; flex-wrap: wrap; }
+        .row { gap: 10px; }
+        .grid { grid-template-columns: 1fr; }
+        .card { padding: 12px; }
+        .pill { font-size: 11px; }
+        /* List items stack nicely */
+        li.item { display: grid; grid-template-columns: 1fr; row-gap: 8px; align-items: start; }
+        li.item .row { justify-content: space-between; width: 100%; }
+        .item-name { word-break: break-word; }
+        .qty-controls { justify-content: space-between; width: 100%; }
+        .qty-btn, .remove-btn { width: 40px; height: 40px; padding: 0; }
+        /* Add-item stays one line with right-aligned + button */
+        .add-card input[type="text"] { height: 40px; }
+        .add-card button { height: 40px; padding: 0 12px; }
+        #addBtn { flex: 0 0 48px; min-width: 48px; }
+      }
+</style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1 style="margin:0;font-size:24px;">🛒 Shopping List</h1>
+          <div class="muted">Statisk frontend → Supabase (Postgres + Auth + Realtime)</div>
+        </div>
+        <div class="row">
+          <div class="stats" id="stats">
+            <span class="pill" id="itemCount">0 items</span>
+            <span class="pill" id="totalQty">0 total</span>
+          </div>
+          <div class="row" id="userBadge" hidden>
+            <span class="pill" id="userEmail"></span>
+            <button id="logoutBtn" title="Log ud">Log ud</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="grid">
+        <!-- Auth -->
+        <section class="card" id="authSection">
+          <h2 style="margin-top:0;">Login</h2>
+          <p class="muted">Magic link eller GitHub. Kræv bekræftet email i Supabase for at gøre "authenticated = verificeret".</p>
+          <div class="row">
+            <input id="emailInput" type="email" placeholder="din@email.dk" />
+            <button id="magicBtn">Send magisk login-link</button>
+          </div>
+          <div class="spacer" style="height:8px"></div>
+          <button id="githubBtn">Log ind med GitHub</button>
+          <p class="muted">Husk at tilføje din lokale origin og din Pages-URL som Redirects i Supabase Auth.</p>
+        </section>
+
+        <!-- Add item -->
+        <section class="card add-card compact"><h2 style="margin-top:0;">Tilføj vare</h2>
+          <div class="row">
+            <input id="itemInput" type="text" placeholder="Tilføj ny vare..." />
+            <button id="addBtn" title="Tilføj">+
+            </button>
+          </div>
+          <p class="muted">Standard antal = 1. Justér med +/- i listen.</p>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top: 12px;">
+        <h2 style="margin-top:0;">Indkøbsliste</h2>
+        <ul id="list"></ul>
+      </section>
+
+      <footer>
+        Bygget med <a href="https://supabase.com" target="_blank" rel="noreferrer">Supabase</a>. Hostet på GitHub Pages.
+      </footer>
+    </div>
+
+    <script type="module">
+      // 🔧 Sæt dine Supabase værdier
+     const SUPABASE_URL = "https://opbvsqapbuutaddzftth.supabase.co"; // fx https://abcdxyz.supabase.co
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wYnZzcWFwYnV1dGFkZHpmdHRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MDc5NzQsImV4cCI6MjA2OTI4Mzk3NH0.Zetp6la4KWgd_wfG8vGx8kM5-D7KdqysPrWcEcWwVoI"; // Anon public key (må ligge i frontend)
+
+      import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // UI refs
+      const userBadge = document.getElementById('userBadge');
+      const userEmail = document.getElementById('userEmail');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const magicBtn = document.getElementById('magicBtn');
+      const emailInput = document.getElementById('emailInput');
+      const githubBtn = document.getElementById('githubBtn');
+      const authSection = document.getElementById('authSection');
+      const itemInput = document.getElementById('itemInput');
+      const addBtn = document.getElementById('addBtn');
+      const list = document.getElementById('list');
+      const itemCount = document.getElementById('itemCount');
+      const totalQty = document.getElementById('totalQty');
+
+      // --- Auth ---
+      async function refreshUser() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          userBadge.hidden = false;
+          userEmail.textContent = user.email || user.user_metadata?.name || 'Logged in';
+        } else {
+          userBadge.hidden = true;
+          userEmail.textContent = '';
+        }
+        if (authSection) { authSection.hidden = !!user; }
+        await loadItems();
+      }
+
+      logoutBtn?.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        await refreshUser();
+      });
+
+      magicBtn?.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        if (!email) return alert('Skriv din e-mail.');
+        const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
+        if (error) return alert('Fejl: ' + error.message);
+        alert('Tjek din mail for login-link.');
+      });
+
+      githubBtn?.addEventListener('click', async () => {
+        const { error } = await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });
+        if (error) alert('Fejl: ' + error.message);
+      });
+
+      // --- Data ---
+      async function loadItems() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          list.innerHTML = '<li class="muted">Log ind for at se listen.</li>';
+          itemCount.textContent = '0 items';
+          totalQty.textContent = '0 total';
+          return;
+        }
+        const { data, error } = await supabase
+          .from('ListItem') // bemærk: mixed-case tabelnavn
+          .select('id, itemName, quantity')
+          .order('id', { ascending: false });
+        if (error) {
+          list.innerHTML = `<li class="muted">Fejl: ${error.message}</li>`;
+          itemCount.textContent = '0 items';
+          totalQty.textContent = '0 total';
+          return;
+        }
+        renderList(data || []);
+      }
+
+      function renderList(items) {
+        if (!items.length) {
+          list.innerHTML = `
+            <li class="muted" style="padding:10px;">
+              Listen er tom — tilføj en vare.
+            </li>`;
+          itemCount.textContent = '0 items';
+          totalQty.textContent = '0 total';
+          return;
+        }
+        list.innerHTML = '';
+        let total = 0;
+        for (const it of items) {
+          total += (it.quantity || 0);
+          const li = document.createElement('li');
+          li.className = 'item';
+
+          const left = document.createElement('div');
+          left.className = 'row';
+          const name = document.createElement('div');
+          name.className = 'item-name';
+          name.textContent = it.itemName;
+          left.appendChild(name);
+
+          const controls = document.createElement('div');
+          controls.className = 'qty-controls';
+
+          const dec = document.createElement('button');
+          dec.className = 'qty-btn';
+          dec.textContent = '−';
+          dec.title = 'Mindsk antal';
+          dec.disabled = (it.quantity ?? 1) < 2;
+          dec.addEventListener('click', () => updateQuantity(it.id, (it.quantity ?? 1) - 1));
+
+          const qty = document.createElement('span');
+          qty.textContent = String(it.quantity ?? 1);
+
+          const inc = document.createElement('button');
+          inc.className = 'qty-btn';
+          inc.textContent = '+';
+          inc.title = 'Øg antal';
+          inc.disabled = (it.quantity ?? 1) > 10; // samme logik som dit POC
+          inc.addEventListener('click', () => updateQuantity(it.id, (it.quantity ?? 1) + 1));
+
+          const del = document.createElement('button');
+          del.className = 'remove-btn';
+          del.textContent = '🗑️';
+          del.title = 'Slet';
+          del.addEventListener('click', () => removeItem(it.id));
+
+          controls.append(dec, qty, inc, del);
+          li.append(left, controls);
+          list.appendChild(li);
+        }
+        itemCount.textContent = `${items.length} items`;
+        totalQty.textContent = `${total} total`;
+      }
+
+      async function addItem(name) {
+        const { error } = await supabase
+          .from('ListItem')
+          .insert({ itemName: name, quantity: 1 });
+        if (error) return alert('Fejl: ' + error.message);
+        itemInput.value = '';
+        await loadItems();
+      }
+
+      async function updateQuantity(id, q) {
+        const { error } = await supabase
+          .from('ListItem')
+          .update({ quantity: q })
+          .eq('id', id);
+        if (error) return alert('Fejl: ' + error.message);
+        await loadItems();
+      }
+
+      async function removeItem(id) {
+        if (!confirm('Slet denne vare?')) return;
+        const { error } = await supabase
+          .from('ListItem')
+          .delete()
+          .eq('id', id);
+        if (error) return alert('Fejl: ' + error.message);
+        await loadItems();
+      }
+
+      addBtn.addEventListener('click', async () => {
+        const name = itemInput.value.trim();
+        if (!name) return;
+        await addItem(name);
+      });
+
+      itemInput.addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter') {
+          const name = itemInput.value.trim();
+          if (!name) return;
+          await addItem(name);
+        }
+      });
+
+      // Håndtér deep-link fra Magic Link / OAuth
+      window.addEventListener('hashchange', refreshUser);
+      window.addEventListener('load', refreshUser);
+
+      // Realtime: lyt på ændringer i ListItem (alle brugere)
+      supabase.channel('realtime:ListItem')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ListItem' }, () => loadItems())
+        .subscribe();
+    </script>
+  </body>
+</html>
