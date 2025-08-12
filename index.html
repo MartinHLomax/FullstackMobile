@@ -93,10 +93,10 @@
         <!-- Auth -->
         <section class="card" id="authSection">
           <h2 style="margin-top:0;">Login</h2>
-          <p class="muted">Kun inviterede brugere kan logge ind. Magic link eller GitHub (hvis aktiveret).</p>
+          <p class="muted">Kun inviterede brugere kan logge ind.</p>
           <div class="row">
             <input id="emailInput" type="email" placeholder="din@email.dk" />
-            <button id="magicBtn">Send magisk login-link</button>
+            <button id="magicBtn">Send login-link</button>
           </div>          
         </section>
 
@@ -154,7 +154,7 @@
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           userBadge.hidden = false;
-          userEmail.textContent = user.email || user.user_metadata?.name || 'Logged in';
+          userEmail.textContent = user.email ? user.email.split('@')[0] : (user.user_metadata?.name || 'Logged in');
         } else {
           userBadge.hidden = true;
           userEmail.textContent = '';
