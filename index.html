@@ -75,7 +75,6 @@
       <header>
         <div>
           <h1 style="margin:0;font-size:24px;">🛒 Shopping List</h1>
-          <div class="muted">Statisk frontend → Supabase (Postgres + Auth + Realtime)</div>
         </div>
         <div class="row">
           <div class="stats" id="stats">
@@ -114,6 +113,9 @@
       <section class="card" style="margin-top: 12px;">
         <h2 style="margin-top:0;">Indkøbsliste</h2>
         <ul id="list"></ul>
+        <div id="clearAllContainer" style="margin-top: 16px; text-align: center;" hidden>
+          <button id="clearAllBtn" style="background:#5c1a2a; border-color:#a43d5b;">🗑️ Slet alle varer</button>
+        </div>
       </section>
 
       <footer>
@@ -148,6 +150,8 @@
       const list = document.getElementById('list');
       const itemCount = document.getElementById('itemCount');
       const totalQty = document.getElementById('totalQty');
+      const clearAllContainer = document.getElementById('clearAllContainer');
+      const clearAllBtn = document.getElementById('clearAllBtn');
 
       // --- Auth ---
       async function refreshUser() {
@@ -220,8 +224,10 @@
             </li>`;
           itemCount.textContent = '0 items';
           totalQty.textContent = '0 total';
+          clearAllContainer.hidden = true;
           return;
         }
+        clearAllContainer.hidden = false;
         list.innerHTML = '';
         let total = 0;
         for (const it of items) {
@@ -298,6 +304,16 @@
         await loadItems();
       }
 
+      async function clearAllItems() {
+        if (!confirm('Er du sikker på, at du vil slette alle varer?')) return;
+        const { error } = await supabase
+          .from('ListItem')
+          .delete()
+          .neq('id', 0); // Delete all items (neq with 0 ensures all rows are selected)
+        if (error) return alert('Fejl: ' + error.message);
+        await loadItems();
+      }
+
       addBtn.addEventListener('click', async () => {
         const name = itemInput.value.trim();
         if (!name) return;
@@ -311,6 +327,8 @@
           await addItem(name);
         }
       });
+
+      clearAllBtn?.addEventListener('click', clearAllItems);
 
       // Håndtér deep-link fra Magic Link / OAuth
       window.addEventListener('hashchange', refreshUser);
