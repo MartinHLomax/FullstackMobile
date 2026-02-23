@@ -27,127 +27,99 @@
     <link rel="manifest" href="/site.webmanifest" />
     <title>Shopping List · Supabase + GitHub Pages</title>
     <style>
-      :root { --gap: 12px; --radius: 14px; }
-      html, body { margin:0; padding:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial; background:#0b1020; color:#f2f4f8; }
+      :root { --gap: 12px; --radius: 14px; --bg: #0b1020; --card: #121935; --surface: #0f1633; --border: #273057; --border-btn: #3d4b86; --text: #f2f4f8; --muted: #a6b0d6; --accent: #3ecf8e; --danger: #5c1a2a; --danger-border: #a43d5b; }
+      html, body { margin:0; padding:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial; background:var(--bg); color:var(--text); }
       a { color: inherit; }
-      .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+      .wrap { max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; }
       header { display:flex; align-items:center; justify-content:space-between; gap:var(--gap); margin-bottom: 16px; }
-      .card { background: #121935; border: 1px solid #273057; border-radius: var(--radius); padding: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
       .row { display:flex; gap: var(--gap); align-items:center; }
-      .muted { color:#a6b0d6; font-size: 14px; }
+      .muted { color:var(--muted); font-size: 14px; }
       button, input { font: inherit; }
-      button { padding: 10px 14px; border-radius: 12px; border:1px solid #3d4b86; background:#1a244d; color:#fff; cursor:pointer; }
-      button:hover { filter: brightness(1.1); }
-      input[type="text"], input[type="email"] { padding: 10px 12px; border-radius: 12px; border:1px solid #3d4b86; background:#0f1633; color:#fff; width:100%; }
-      .pill { padding: 4px 8px; border:1px solid #3d4b86; background:#0f1633; border-radius: 999px; font-size:12px; }
-      ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
-      li.item { display:flex; align-items:center; justify-content:space-between; gap:var(--gap); background:#0f1633; border:1px solid #273057; border-radius: 12px; padding: 10px; }
-      .item-name { font-weight:600; }
-      .qty-controls { display:flex; align-items:center; gap:8px; }
-      .qty-btn { width:36px; height:36px; border-radius:12px; }
-      .remove-btn { background:#5c1a2a; border-color:#a43d5b; }
-      .stats { display:flex; gap:10px; align-items:center; }
-      .tab-bar { display:flex; gap:0; }
-      .tab-btn { flex:1; padding:10px 0; border:1px solid #273057; background:#0f1633; color:#a6b0d6; font-weight:600; font-size:14px; cursor:pointer; transition:background 0.15s, color 0.15s; border-bottom:2px solid transparent; }
-      .tab-btn:first-child { border-radius:14px 0 0 0; }
-      .tab-btn:last-child { border-radius:0 14px 0 0; }
-      .tab-btn:hover { background:#1a244d; }
-      .tab-btn.active { background:#121935; color:#f2f4f8; border-bottom-color:#3ecf8e; }
-      .list-card-tabs { border-top-left-radius:0; border-top-right-radius:0; border-top:none; margin-top:0; }
-      .grid { display:grid; grid-template-columns: 1fr; gap: var(--gap); }
-      @media (min-width: 760px) { .grid { grid-template-columns: 1.2fr 1fr; } }
-      footer { margin-top: 36px; text-align:center; color:#8ea0d0; font-size:13px; }
-      /* Compact add-item card */
-      .add-card h2 { margin: 4px 0 8px !important; }
-      .add-card .row { gap: 8px; }
-      .add-card input[type="text"] { padding: 6px 10px; height: 36px; }
-      .add-card button { height: 36px; padding: 0 12px; }
-  /* Compact add-item card */
-      .add-card h2 { margin: 4px 0 8px !important; }
-      .add-card .row { gap: 8px; }
-      .add-card input[type="text"] { padding: 6px 10px; height: 36px; }
-      .add-card button { height: 36px; padding: 0 12px; }
+      button { padding: 10px 14px; border-radius: 12px; border:1px solid var(--border-btn); background:#1a244d; color:#fff; cursor:pointer; transition: filter 0.1s; }
+      button:hover { filter: brightness(1.15); }
+      button:active { filter: brightness(0.95); }
+      input[type="text"], input[type="email"] { padding: 10px 12px; border-radius: 12px; border:1px solid var(--border-btn); background:var(--surface); color:#fff; width:100%; }
+      .pill { padding: 4px 10px; border:1px solid var(--border-btn); background:var(--surface); border-radius: 999px; font-size:12px; }
+      ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+      li.item { display:flex; align-items:center; justify-content:space-between; gap:var(--gap); background:var(--surface); border:1px solid var(--border); border-radius: 12px; padding: 10px 12px; transition: background 0.15s; }
+      li.item:active { background: #1a244d; }
+      .item-name { font-weight:600; font-size:15px; }
+      .qty-controls { display:flex; align-items:center; gap:6px; }
+      .qty-btn { width:34px; height:34px; border-radius:10px; font-size:16px; }
+      .remove-btn { background:var(--danger); border-color:var(--danger-border); width:34px; height:34px; border-radius:10px; padding:0; }
 
-      /* Mobile responsiveness */
+      /* Tabs */
+      .tab-bar { display:flex; gap:0; }
+      .tab-btn { flex:1; padding:12px 0; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-weight:600; font-size:14px; cursor:pointer; transition:background 0.15s, color 0.15s; border-bottom:2px solid transparent; }
+      .tab-btn:first-child { border-radius:var(--radius) 0 0 0; }
+      .tab-btn:last-child { border-radius:0 var(--radius) 0 0; }
+      .tab-btn:hover { background:#1a244d; }
+      .tab-btn.active { background:var(--card); color:var(--text); border-bottom-color:var(--accent); }
+      .tab-count { font-weight:400; color:var(--muted); font-size:12px; margin-left:4px; }
+      .tab-btn.active .tab-count { color:var(--accent); }
+      .list-card-tabs { border-top-left-radius:0; border-top-right-radius:0; border-top:none; margin-top:0; }
+
+      /* Add row integrated in list card */
+      .add-row { display:flex; gap:8px; margin-bottom:12px; }
+      .add-row input[type="text"] { padding:8px 12px; height:40px; box-sizing:border-box; }
+      .add-row button { height:40px; width:40px; padding:0; font-size:20px; flex-shrink:0; border-radius:10px; }
+
+      /* Mobile */
       @media (max-width: 520px) {
-        .wrap { padding: 16px 12px 64px; }
-        header { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .wrap { padding: 16px 12px 32px; }
+        header { gap: 8px; }
         h1 { font-size: 20px !important; }
-        .stats { gap: 6px; flex-wrap: wrap; }
-        .row { gap: 10px; }
-        .grid { grid-template-columns: 1fr; }
         .card { padding: 12px; }
         .pill { font-size: 11px; }
-        /* List items stack nicely */
         li.item { display: grid; grid-template-columns: 1fr; row-gap: 8px; align-items: start; }
         li.item .row { justify-content: space-between; width: 100%; }
         .item-name { word-break: break-word; }
         .qty-controls { justify-content: space-between; width: 100%; }
-        .qty-btn, .remove-btn { width: 40px; height: 40px; padding: 0; }
-        /* Add-item stays one line with right-aligned + button */
-        .add-card input[type="text"] { height: 40px; }
-        .add-card button { height: 40px; padding: 0 12px; }
-        #addBtn { flex: 0 0 48px; min-width: 48px; }
-        .tab-btn { font-size:13px; padding:8px 0; }
+        .qty-btn, .remove-btn { width: 40px; height: 40px; }
+        .add-row input[type="text"] { height:44px; }
+        .add-row button { height:44px; width:44px; }
+        .tab-btn { font-size:13px; padding:10px 0; }
       }
 </style>
   </head>
   <body>
     <div class="wrap">
       <header>
-        <div>
-          <h1 style="margin:0;font-size:24px;">🛒 Shopping List</h1>
-        </div>
-        <div class="row">
-          <div class="stats" id="stats">
-            <span class="pill" id="itemCount">0 items</span>
-            <span class="pill" id="totalQty">0 total</span>
-          </div>
-          <div class="row" id="userBadge" hidden>
-            <span class="pill" id="userEmail"></span>
-            <button id="logoutBtn" title="Log ud">Log ud</button>
-          </div>
+        <h1 style="margin:0;font-size:22px;font-weight:700;">Shopping List</h1>
+        <div class="row" id="userBadge" hidden>
+          <span class="pill" id="userEmail"></span>
+          <button id="logoutBtn" title="Log ud" style="padding:6px 12px;font-size:13px;">Log ud</button>
         </div>
       </header>
 
-      <div class="grid">
-        <!-- Auth -->
-        <section class="card" id="authSection">
-          <h2 style="margin-top:0;">Login</h2>
-          <p class="muted">Kun inviterede brugere kan logge ind.</p>
-          <div class="row">
-            <input id="emailInput" type="email" placeholder="din@email.dk" />
-            <button id="magicBtn">Send login-link</button>
-          </div>          
-        </section>
-
-        <!-- Add item -->
-        <section class="card add-card compact"><h2 style="margin-top:0;">Tilføj vare</h2>
-          <div class="row">
-            <input id="itemInput" type="text" placeholder="Tilføj ny vare..." />
-            <button id="addBtn" title="Tilføj">+
-            </button>
-          </div>
-          <p class="muted">Standard antal = 1. Justér med +/- i listen.</p>
-        </section>
-      </div>
-
-      <div style="margin-top: 12px;">
-        <div class="tab-bar">
-          <button class="tab-btn active" data-list="shopping" id="tabShopping">🛒 Indkøbsliste</button>
-          <button class="tab-btn" data-list="memo" id="tabMemo">📝 Huskeliste</button>
+      <!-- Auth -->
+      <section class="card" id="authSection" style="margin-bottom:16px;">
+        <h2 style="margin-top:0;font-size:16px;">Login</h2>
+        <p class="muted" style="margin:0 0 10px;">Kun inviterede brugere kan logge ind.</p>
+        <div class="row">
+          <input id="emailInput" type="email" placeholder="din@email.dk" />
+          <button id="magicBtn">Send link</button>
         </div>
-        <section class="card list-card-tabs">
-          <ul id="list"></ul>
-          <div id="clearAllContainer" style="margin-top: 16px; text-align: center;" hidden>
-            <button id="clearAllBtn" style="background:#5c1a2a; border-color:#a43d5b;">🗑️ Slet alle varer</button>
-          </div>
-        </section>
+      </section>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-list="shopping" id="tabShopping">Indkøb <span class="tab-count" id="countShopping"></span></button>
+        <button class="tab-btn" data-list="memo" id="tabMemo">Huskeliste <span class="tab-count" id="countMemo"></span></button>
       </div>
 
-      <footer>
-        Bygget med <a href="https://supabase.com" target="_blank" rel="noreferrer">Supabase</a>. Hostet på GitHub Pages.
-      </footer>
+      <!-- List card -->
+      <section class="card list-card-tabs">
+        <div class="add-row">
+          <input id="itemInput" type="text" placeholder="Tilføj vare..." />
+          <button id="addBtn" title="Tilføj">+</button>
+        </div>
+        <ul id="list"></ul>
+        <div id="clearAllContainer" style="margin-top:14px; text-align:center;" hidden>
+          <button id="clearAllBtn" style="background:var(--danger); border-color:var(--danger-border); font-size:13px; padding:8px 16px;">Slet alle</button>
+        </div>
+      </section>
     </div>
 
     <script type="module">
@@ -221,8 +193,6 @@
       const itemInput = document.getElementById('itemInput');
       const addBtn = document.getElementById('addBtn');
       const list = document.getElementById('list');
-      const itemCount = document.getElementById('itemCount');
-      const totalQty = document.getElementById('totalQty');
       const clearAllContainer = document.getElementById('clearAllContainer');
       const clearAllBtn = document.getElementById('clearAllBtn');
 
@@ -230,6 +200,8 @@
       let activeList = 'shopping';
       const tabShopping = document.getElementById('tabShopping');
       const tabMemo = document.getElementById('tabMemo');
+      const countShopping = document.getElementById('countShopping');
+      const countMemo = document.getElementById('countMemo');
 
       function switchTab(listId) {
         activeList = listId;
@@ -294,53 +266,49 @@
       });
 
       // --- Data ---
+      async function updateTabCounts() {
+        const { count: sc } = await supabase.from('ListItem').select('*', { count: 'exact', head: true }).eq('list_id', 'shopping');
+        const { count: mc } = await supabase.from('ListItem').select('*', { count: 'exact', head: true }).eq('list_id', 'memo');
+        countShopping.textContent = sc ? `· ${sc}` : '';
+        countMemo.textContent = mc ? `· ${mc}` : '';
+      }
+
       async function loadItems() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           list.innerHTML = '<li class="muted">Log ind for at se listen.</li>';
-          itemCount.textContent = '0 items';
-          totalQty.textContent = '0 total';
+          countShopping.textContent = '';
+          countMemo.textContent = '';
           return;
         }
         const { data, error } = await supabase
-          .from('ListItem') // bemærk: mixed-case tabelnavn
+          .from('ListItem')
           .select('id, itemName, quantity, user_id, list_id')
           .eq('list_id', activeList)
           .order('id', { ascending: false });
         if (error) {
           list.innerHTML = `<li class="muted">Fejl: ${error.message}</li>`;
-          itemCount.textContent = '0 items';
-          totalQty.textContent = '0 total';
           return;
         }
         renderList(data || []);
+        updateTabCounts();
       }
 
       function renderList(items) {
         if (!items.length) {
-          list.innerHTML = `
-            <li class="muted" style="padding:10px;">
-              Listen er tom — tilføj en vare.
-            </li>`;
-          itemCount.textContent = '0 items';
-          totalQty.textContent = '0 total';
+          list.innerHTML = '<li class="muted" style="padding:10px;text-align:center;">Listen er tom</li>';
           clearAllContainer.hidden = true;
           return;
         }
         clearAllContainer.hidden = false;
         list.innerHTML = '';
-        let total = 0;
         for (const it of items) {
-          total += (it.quantity || 0);
           const li = document.createElement('li');
           li.className = 'item';
 
-          const left = document.createElement('div');
-          left.className = 'row';
           const name = document.createElement('div');
           name.className = 'item-name';
           name.textContent = it.itemName;
-          left.appendChild(name);
 
           const controls = document.createElement('div');
           controls.className = 'qty-controls';
@@ -348,32 +316,28 @@
           const dec = document.createElement('button');
           dec.className = 'qty-btn';
           dec.textContent = '−';
-          dec.title = 'Mindsk antal';
           dec.disabled = (it.quantity ?? 1) < 2;
           dec.addEventListener('click', () => updateQuantity(it.id, (it.quantity ?? 1) - 1));
 
           const qty = document.createElement('span');
+          qty.style.cssText = 'min-width:20px;text-align:center;font-weight:600;';
           qty.textContent = String(it.quantity ?? 1);
 
           const inc = document.createElement('button');
           inc.className = 'qty-btn';
           inc.textContent = '+';
-          inc.title = 'Øg antal';
-          inc.disabled = (it.quantity ?? 1) > 10; // samme logik som dit POC
+          inc.disabled = (it.quantity ?? 1) > 10;
           inc.addEventListener('click', () => updateQuantity(it.id, (it.quantity ?? 1) + 1));
 
           const del = document.createElement('button');
           del.className = 'remove-btn';
           del.textContent = '🗑️';
-          del.title = 'Slet';
           del.addEventListener('click', () => removeItem(it.id));
 
           controls.append(dec, qty, inc, del);
-          li.append(left, controls);
+          li.append(name, controls);
           list.appendChild(li);
         }
-        itemCount.textContent = `${items.length} items`;
-        totalQty.textContent = `${total} total`;
       }
 
       // Input validation and sanitization helper
