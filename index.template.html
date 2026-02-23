@@ -47,6 +47,13 @@
       .qty-btn { width:36px; height:36px; border-radius:12px; }
       .remove-btn { background:#5c1a2a; border-color:#a43d5b; }
       .stats { display:flex; gap:10px; align-items:center; }
+      .tab-bar { display:flex; gap:0; }
+      .tab-btn { flex:1; padding:10px 0; border:1px solid #273057; background:#0f1633; color:#a6b0d6; font-weight:600; font-size:14px; cursor:pointer; transition:background 0.15s, color 0.15s; border-bottom:2px solid transparent; }
+      .tab-btn:first-child { border-radius:14px 0 0 0; }
+      .tab-btn:last-child { border-radius:0 14px 0 0; }
+      .tab-btn:hover { background:#1a244d; }
+      .tab-btn.active { background:#121935; color:#f2f4f8; border-bottom-color:#3ecf8e; }
+      .list-card-tabs { border-top-left-radius:0; border-top-right-radius:0; border-top:none; margin-top:0; }
       .grid { display:grid; grid-template-columns: 1fr; gap: var(--gap); }
       @media (min-width: 760px) { .grid { grid-template-columns: 1.2fr 1fr; } }
       footer { margin-top: 36px; text-align:center; color:#8ea0d0; font-size:13px; }
@@ -81,6 +88,7 @@
         .add-card input[type="text"] { height: 40px; }
         .add-card button { height: 40px; padding: 0 12px; }
         #addBtn { flex: 0 0 48px; min-width: 48px; }
+        .tab-btn { font-size:13px; padding:8px 0; }
       }
 </style>
   </head>
@@ -124,13 +132,18 @@
         </section>
       </div>
 
-      <section class="card" style="margin-top: 12px;">
-        <h2 style="margin-top:0;">Indkøbsliste</h2>
-        <ul id="list"></ul>
-        <div id="clearAllContainer" style="margin-top: 16px; text-align: center;" hidden>
-          <button id="clearAllBtn" style="background:#5c1a2a; border-color:#a43d5b;">🗑️ Slet alle varer</button>
+      <div style="margin-top: 12px;">
+        <div class="tab-bar">
+          <button class="tab-btn active" data-list="shopping" id="tabShopping">🛒 Indkøbsliste</button>
+          <button class="tab-btn" data-list="memo" id="tabMemo">📝 Huskeliste</button>
         </div>
-      </section>
+        <section class="card list-card-tabs">
+          <ul id="list"></ul>
+          <div id="clearAllContainer" style="margin-top: 16px; text-align: center;" hidden>
+            <button id="clearAllBtn" style="background:#5c1a2a; border-color:#a43d5b;">🗑️ Slet alle varer</button>
+          </div>
+        </section>
+      </div>
 
       <footer>
         Bygget med <a href="https://supabase.com" target="_blank" rel="noreferrer">Supabase</a>. Hostet på GitHub Pages.
@@ -138,8 +151,8 @@
     </div>
 
     <script type="module">
-      const SUPABASE_URL = "https://opbvsqapbuutaddzftth.supabase.co"; // fx https://abcdxyz.supabase.co
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wYnZzcWFwYnV1dGFkZHpmdHRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MDc5NzQsImV4cCI6MjA2OTI4Mzk3NH0.Zetp6la4KWgd_wfG8vGx8kM5-D7KdqysPrWcEcWwVoI"; // Anon public key (må ligge i frontend)
+      const SUPABASE_URL = "{{SUPABASE_URL}}"; // Will be replaced by build script
+      const SUPABASE_ANON_KEY = "{{SUPABASE_ANON_KEY}}"; // Will be replaced by build script
 
       import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -150,6 +163,52 @@
           storage: window.localStorage
         }
       });
+
+      // --- Connection Logging ---
+      let _lastLogTime = 0;
+      const LOG_THROTTLE_MS = 5000;
+
+      async function logConnection(eventType, user) {
+        const now = Date.now();
+        if (now - _lastLogTime < LOG_THROTTLE_MS) return;
+        _lastLogTime = now;
+
+        if (eventType === 'TOKEN_REFRESHED' || eventType === 'INITIAL_SESSION') return;
+
+        if (!user) {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          user = currentUser;
+        }
+        if (!user) return;
+
+        const isPwa = window.matchMedia('(display-mode: standalone)').matches
+          || window.navigator.standalone === true
+          || window.location.search.includes('source=pwa');
+
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+        const entry = {
+          user_id:         user.id,
+          email:           user.email || null,
+          event_type:      eventType,
+          user_agent:      navigator.userAgent || null,
+          language:        navigator.language || null,
+          platform:        navigator.platform || null,
+          screen_w:        screen.width || null,
+          screen_h:        screen.height || null,
+          viewport_w:      window.innerWidth || null,
+          viewport_h:      window.innerHeight || null,
+          referrer:        document.referrer || null,
+          page_url:        window.location.href || null,
+          is_pwa:          isPwa,
+          connection_type: conn?.effectiveType || null,
+          is_online:       navigator.onLine
+        };
+
+        supabase.from('connection_log').insert(entry).then(({ error }) => {
+          if (error) console.warn('Connection log error:', error.message);
+        });
+      }
 
       // UI refs
       const userBadge = document.getElementById('userBadge');
@@ -166,6 +225,20 @@
       const totalQty = document.getElementById('totalQty');
       const clearAllContainer = document.getElementById('clearAllContainer');
       const clearAllBtn = document.getElementById('clearAllBtn');
+
+      // --- Tab state ---
+      let activeList = 'shopping';
+      const tabShopping = document.getElementById('tabShopping');
+      const tabMemo = document.getElementById('tabMemo');
+
+      function switchTab(listId) {
+        activeList = listId;
+        tabShopping.classList.toggle('active', listId === 'shopping');
+        tabMemo.classList.toggle('active', listId === 'memo');
+        loadItems();
+      }
+      tabShopping?.addEventListener('click', () => switchTab('shopping'));
+      tabMemo?.addEventListener('click', () => switchTab('memo'));
 
       // --- Auth ---
       async function refreshUser() {
@@ -231,7 +304,8 @@
         }
         const { data, error } = await supabase
           .from('ListItem') // bemærk: mixed-case tabelnavn
-          .select('id, itemName, quantity, user_id')
+          .select('id, itemName, quantity, user_id, list_id')
+          .eq('list_id', activeList)
           .order('id', { ascending: false });
         if (error) {
           list.innerHTML = `<li class="muted">Fejl: ${error.message}</li>`;
@@ -340,7 +414,7 @@
 
         const { error } = await supabase
           .from('ListItem')
-          .insert({ itemName: sanitizedName, quantity: 1, user_id: user.id });
+          .insert({ itemName: sanitizedName, quantity: 1, user_id: user.id, list_id: activeList });
         if (error) return alert('Fejl: ' + error.message);
         itemInput.value = '';
         await loadItems();
@@ -371,11 +445,13 @@
       }
 
       async function clearAllItems() {
-        if (!confirm('Er du sikker på, at du vil slette alle varer?')) return;
+        const listLabel = activeList === 'shopping' ? 'indkøbslisten' : 'huskelisten';
+        if (!confirm(`Er du sikker på, at du vil slette alle varer fra ${listLabel}?`)) return;
         const { error } = await supabase
           .from('ListItem')
           .delete()
-          .neq('id', 0); // Delete all items (neq with 0 ensures all rows are selected)
+          .eq('list_id', activeList)
+          .neq('id', 0);
         if (error) return alert('Fejl: ' + error.message);
         await loadItems();
       }
@@ -400,14 +476,22 @@
       window.addEventListener('hashchange', refreshUser);
 
       // Lyt efter session-ændringer (persist + auto-refresh)
-      supabase.auth.onAuthStateChange((_event, _session) => {
+      supabase.auth.onAuthStateChange((event, session) => {
         refreshUser();
+        logConnection(event, session?.user || null);
       });
-      window.addEventListener('load', refreshUser);
+      window.addEventListener('load', async () => {
+        await refreshUser();
+        const { data: { user } } = await supabase.auth.getUser();
+        logConnection('page_load', user);
+      });
 
       // Realtime: lyt på ændringer i ListItem (alle brugere)
       supabase.channel('realtime:ListItem')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ListItem' }, () => loadItems())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ListItem' }, (payload) => {
+          const row = payload.new || payload.old;
+          if (!row || !row.list_id || row.list_id === activeList) loadItems();
+        })
         .subscribe();
 
       // PWA: registrér service worker (GitHub Pages subpath-safe)
